@@ -1,154 +1,137 @@
-#include <stdio.h>
-#include <stdlib.h>
-#include <stdint.h>
-#include <unistd.h>
-#include <math.h>
-#include <string.h>
-#include "common.h"
-#include "config.h"
-#include "imu.h"
-#include "flashlog.h"
-#include "ringbuf.h"
-#include "kalmanfilter2.h"
-#include "kalmanfilter3.h"
-#include "kalmanfilter4.h"
+#include "MPU9250.h"
+#include <MahonyMadgwichKalmanFilter.h>
+#include <Adafruit_BMP085.h>
 
-#define KF2    0
-#define KF3    1
-#define KF4    2
-#define KF4D   3
+MPU9250 mpu9250(Wire,0x68);
+Adafruit_BMP085 bmp_180;
 
-int algo_option = -1;
+MahonyMadgwichKalmanFilter  mmkf;
 
-int select(int argc, char* argv[]){
+double baseline; // baseline pressure
+double Temp,Pascal,Altitude;
+double mpu_temp;
 
-   if (argc != 3) {
-      fprintf(stderr,"Usage : %s -kf2/kf3/kf4/kf4d  ibg_binary_file\n", argv[0]);
-      }
-   if (!strcmp(argv[1], "-kf2") ) {
-      algo_option = KF2;
-      }
-   else
-   if (!strcmp(argv[1], "-kf3") ) {
-      algo_option = KF3;
-      }
-   else      
-   if (!strcmp(argv[1], "-kf4") ) {
-      algo_option = KF4;
-      }
-   else   
-   if (!strcmp(argv[1], "-kf4d") ) {
-      algo_option = KF4D;
-      }
-   else {
-      fprintf(stderr,"Usage : %s -kf2/kf3/kf4/kf4d  ibg_binary_file\n", argv[0]);
-   }
+// Sensor variables
+float accel[3];  // Actually stores the NEGATED acceleration (equals gravity, if board not moving).
+float magnetom[3];
+float gyro[3];
 
+float zz,zv;
+
+uint32_t times = micros(),
+  next_times = micros(),
+  half_times = micros();
+
+// Read data from MPU9250
+void read_mpu9250() {
+  
+  mpu9250.readSensor();
+  
+  accel[0] = mpu9250.getAccelX_mss();
+  accel[1] = mpu9250.getAccelY_mss();
+  accel[2] = mpu9250.getAccelZ_mss();
+
+  magnetom[0] = mpu9250.getMagX_uT();
+  magnetom[1] = mpu9250.getMagY_uT();
+  magnetom[2] = mpu9250.getMagZ_uT();
+
+  gyro[0] = mpu9250.getGyroX_rads();
+  gyro[1] = mpu9250.getGyroY_rads();
+  gyro[2] = mpu9250.getGyroZ_rads();
+
+  mpu_temp = mpu9250.getTemperature_C();
 }
 
-int main(int argc, char* argv[]) {
+void read_bmp180(){
+    Temp=bmp_180.readTemperature();
+    Altitude= bmp_180.readAltitude();
+    Pascal = bmp_180.readPressure();
+}
+  
+void setup() {
+  
+  Serial.begin(115200);
+  Serial.println("Sensor init..");
+    
+  if (!bmp_180.begin()) {
+    Serial.println("bmp180 sensor hatası");
+    while (1) {}
+  }
 
-    float numberArray[1000];
-    int i=0,j=0;
+  if (!mpu9250.begin()) {
+    Serial.println("mpu9250 sensor hatası!");
+    while (1) {}
+  }
+  
+  // setting the accelerometer full scale range to +/-8G 
+  mpu9250.setAccelRange(MPU9250::ACCEL_RANGE_4G);
+  // setting the gyroscope full scale range to +/-500 deg/s
+  mpu9250.setGyroRange(MPU9250::GYRO_RANGE_500DPS);
+  // setting DLPF bandwidth to 20 Hz
+  mpu9250.setDlpfBandwidth(MPU9250::DLPF_BANDWIDTH_41HZ);
+  // setting SRD to 19 fo
+  mpu9250.setSrd(9);
 
-    if(select(argc, argv))return -1;
+  Serial.println("Evertyhink ok..");
+}
 
-    FILE* fp =  fopen(argv[2], "r");
-	
-    if (fp == NULL) {
-      fprintf(stderr,"Usage : %s -kf2/kf3/kf4/kf4d  ibg_binary_file\n", argv[0]);
-		fprintf(stderr,"Error opening %s", argv[1]);
-		return(-1);
-	}
+void loop() {
+  
+    times = micros();
+    read_mpu9250();
+    half_times = micros();
+    read_bmp180();
+    next_times = micros();
+    
+    /*Serial.print(mpu_temp);
+    Serial.print(" ");
+    
+    Serial.print(Temp);
+    
+    Serial.print(" ");
+    Serial.print(Pascal);
+    Serial.print(" ");
 
-    //IBG_HDR hdr;
-    //B_RECORD baro;
-    //G_RECORD gps;
-    //T_RECORD_
-    //I_RECORD_
+    // Calculate altitude assuming 'standard' barometric
+    // pressure of 1013.25 millibar = 101325 Pascal
+    Serial.print(Altitude);
+    Serial.print(" ");
 
-    Quaternion qua;
-    Imu imu; 
-    EulerAngles eul;
+    Serial.print(accel[0]);
+    Serial.print(" ");
+    Serial.print(accel[1]);
+    Serial.print(" ");
+    Serial.print(accel[2]);
+    Serial.print(" ");
+    Serial.print(magnetom[0]);
+    Serial.print(" ");
+    Serial.print(magnetom[1]);
+    Serial.print(" ");
+    Serial.print(magnetom[2]);
+    Serial.print(" ");
+    Serial.print(gyro[0],6);
+    Serial.print(" ");
+    Serial.print(gyro[1],6);
+    Serial.print(" ");
+    Serial.print(gyro[2],6);
+    Serial.print(" ");
 
-    int kalmanFilterInitialized = 0;
-    float gx,gy,gz,ax,ay,az,mx, my, mz; 
-    float baroAltCm, velNorth, velEast, velDown;
-    float iirClimbrateCps, kfClimbrateCps,kfAltitudeCm;
-    float glideRatio = 1.0f;
-    float zAccelAverage;
+    Serial.print(half_times-times);
+    Serial.print(" ");
+    Serial.println(next_times-times);*/
 
-    char * line = NULL;
-    size_t len = 0;
-    ssize_t read;
-    char * xread;
-
-    float data[2000][15];
-
-    while ((read = getline(&line, &len, fp)) != -1) {
-        //printf("Retrieved line of length %zu:\n", read);
-        xread = strtok(line, " ");
-
-        while (xread != NULL){
-            data[i][j] = strtof(xread, NULL);
-            //printf ("%f ", data[i][j]);
-
-            xread = strtok (NULL, " ");
-            j++;
-        }
-
-        baroAltCm = HPA2CMHG(data[i][3]);
-        //baroAltCm = data[i][2];
-        
-        imu.acc[0] = data[i][4]*1000.0;//m to mg
-        imu.acc[1] = data[i][5]*1000.0;
-        imu.acc[2] = data[i][6]*1000.0;
-
-        imu.gyro[0] = data[i][7];
-        imu.gyro[1] = data[i][8];
-        imu.gyro[2] = data[i][9];
-
-        imu.mag[0] = data[i][10];
-        imu.mag[1] = data[i][11];
-        imu.mag[2] = data[i][12];
-        
-        float asqd = imu.acc[0]*imu.acc[0] + imu.acc[1]*imu.acc[1] + imu.acc[2]*imu.acc[2];
-        // constrain use of accelerometer data to the window [0.75G, 1.25G] for determining
-        // the orientation quaternion
-        int useAccel = ((asqd > 562500.0f) && (asqd < 1562500.0f)) ? 1 : 0;	
-        int useMag = 1;
-
-        compensate_sensor_errors(&imu);
-        //imu_MadgwickQuaternionUpdate(&imu, IMU_SAMPLE_PERIOD_SECS);
-        //qua; qua.w = q[0]; qua.x = q[1]; qua.y = q[2]; qua.z = q[3];
-        //eul = ToEulerAngles(qua);
-
-        imu_mahonyAHRSupdate9DOF(useAccel, useMag, IMU_SAMPLE_PERIOD_SECS, &imu);
-
-        float yawDeg,pitchDeg,rollDeg;
-        imu_quaternion2YawPitchRoll(q0,q1,q2,q3, (float*)&yawDeg, (float*)&pitchDeg, (float*)&rollDeg);
-
-        float gravityCompensatedAccel = imu_gravityCompensatedAccel(&imu, q0, q1, q2, q3);
-        ringbuf_addSample(gravityCompensatedAccel); 
-
-
-        switch (algo_option) {
-            case 3 : // KF4D
-            if (kalmanFilterInitialized == 0) {
-                kalmanFilter4_configure(KF_ZMEAS_VARIANCE, KF_ACCEL_VARIANCE*1000.0f, true, baroAltCm, 0.0f, 0.0f);
-                kalmanFilterInitialized = 1;
-            }
-            zAccelAverage = ringbuf_averageNewestSamples(10); 
-            kalmanFilter4_predict(KF_SAMPLE_PERIOD_SECS);
-            kalmanFilter4_update(baroAltCm, zAccelAverage, (float*)&kfAltitudeCm, (float*)&kfClimbrateCps);
-            break;
-        }
-
-        //printf("\n");
-        //printf("%s", line);
-        i++;
+    if(!mmkf.UpdateData(accel, gyro, magnetom,  Altitude)){
+      zz = mmkf.GetAltitudeEstimation();
+      zv = mmkf.GetVelocityEstimation();
+      Serial.print(zz);
+      Serial.print(" "); 
+      Serial.print(zv);
+      Serial.println(); 
+    }else{
+        Serial.println(Altitude);
+        delay(10);
     }
-    fclose(fp);
+   
 
-
-}   
+        
+}
