@@ -7,4 +7,4 @@
  
  g++ -o mmkf main.cpp ../MahonyMadgwichKalmanFilter.cpp
     
- ./mmkf -kf4d bmp180_mpu9250.txt  > test3.txt
+ ./mmkf -kfmg bmp180_mpu9250.txt  > test3.txt
