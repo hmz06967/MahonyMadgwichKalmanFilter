@@ -1,5 +1,5 @@
 # MahonyMadgwichKalmanFilter
- Sensor fusion kalman filter with ahrs mahony or madgwich Barometer and IMU 
+ Sensor fusion kalman filter with ahrs mahony or madgwich Barometer and (9dof or 6dof )IMU 
 
 ## Build And Run Code C
   ```c++
