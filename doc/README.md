@@ -11,6 +11,12 @@
 
   ```c++
   LOG_FILTER = true //becareful
+  g++ -g ../*.cpp main.cpp -o main 
+
+  # test
+  
+  ./main -kfmh sensor.txt > mmkf.log
+
   ```
 
 ![Aplication test](/doc/images/IMG_20211211_012116.jpg)
