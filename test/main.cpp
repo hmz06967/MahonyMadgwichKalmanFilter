@@ -6,7 +6,7 @@
 #include <string.h>
 
 
-#include "../MahonyMadgwichKalmanFilter1.h"
+#include "../MahonyMadgwichKalmanFilter.h"
 
 using namespace std;
 
