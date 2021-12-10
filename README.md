@@ -12,6 +12,6 @@
   ```
 ## Read Doc
 
-`<Kf campute doc>` : [kalman_filter][doc/kalman_filter.pdf]
+`<Kf campute doc>` : <https://github.com/hmz06967/MahonyMadgwichKalmanFilter/doc/kalman_filter.pdf>
 
-`<Print graph python response>` : [print_graph][doc/print_graph.ipynb]
+`<Print graph python response>` : <https://github.com/hmz06967/MahonyMadgwichKalmanFilter/doc/print_graph.ipynb>
