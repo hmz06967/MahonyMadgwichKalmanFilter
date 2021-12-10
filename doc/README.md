@@ -12,4 +12,4 @@
 
 ![Aplication test](/doc/images/IMG_20211211_012116.jpg)
   
-![Aplication test](/doc/images/uart.jpg)
+![Aplication test](/doc/images/uart.PNG)
