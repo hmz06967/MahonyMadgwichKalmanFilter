@@ -11,10 +11,10 @@
 
   ```c++
   LOG_FILTER = true //becareful
-  g++ -g ../*.cpp main.cpp -o main 
+  g++ -g MahonyMadgwichKalmanFilter.cpp main.cpp -o main 
 
   # test
-  
+
   ./main -kfmh sensor.txt > mmkf.log
 
   ```
