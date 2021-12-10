@@ -11,6 +11,6 @@
  ./mmkf -kfmg bmp180_mpu9250.txt  > test3.txt
   ```
 ## Read Doc
-[kalman_filter]<doc/kalman_filter.pdf>
+[kalman_filter][doc/kalman_filter.pdf]
 
-[print_graph]<doc/print_graph.ipynb>
+[print_graph][doc/print_graph.ipynb]
