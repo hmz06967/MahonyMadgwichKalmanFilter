@@ -12,6 +12,6 @@
   ```
 ## Read Doc
 
-[kalman_filter](doc/kalman_filter.pdf)
+[kalman_filter](doc/)
 
 [print_graph](doc/print_graph.ipynb)
