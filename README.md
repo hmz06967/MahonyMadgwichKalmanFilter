@@ -11,7 +11,6 @@
  ./mmkf -kfmg bmp180_mpu9250.txt  > test3.txt
   ```
 ## Read Doc
+[kalman_filter]<doc/kalman_filter.pdf>
 
-`<Kf campute doc>` : [kalman_filter]<https://github.com/hmz06967/MahonyMadgwichKalmanFilter/doc/kalman_filter.pdf>
-
-`<Print graph python response>` : [print_graph]<https://github.com/hmz06967/MahonyMadgwichKalmanFilter/doc/print_graph.ipynb>
+[print_graph]<doc/print_graph.ipynb>
