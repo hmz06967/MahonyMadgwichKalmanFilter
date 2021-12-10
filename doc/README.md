@@ -8,6 +8,7 @@
 
   ```c++
   LOG_FILTER = true //becareful
+  ```
   
-  ![](https://pandao.github.io/editor.md/images/logos/editormd-logo-180x180.png)
+![Aplication test](https://pandao.github.io/editor.md/images/logos/editormd-logo-180x180.png)
   
