@@ -16,3 +16,5 @@
 [kalman_filter](doc/)
 
 [print_graph](doc/print_graph.ipynb)
+
+Mahony AHRS estimation algorithm/code - https://x-io.co.uk/open-source-imu-and-ahrs-algorithms/
